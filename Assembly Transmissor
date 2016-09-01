@@ -19,16 +19,16 @@ GO:
     MOV r6,0b10001110		//dado comum, sem codificacao, mas precisa iniciar com 10 para indicar nova transmissao
     MOV	r1,DELAYCOUNT				// loop mata tempo
 INICIO:
-	JMP DELAY
+    JMP DELAY
 CONTINUA:
-	MOV	r1,DELAYCOUNT
-	QBEQ NORMAL,r5,0			//se estado 0, envia dado
-	QBEQ COMPLEMENTO,r5,1	//se estado 1, envia complemento do dado
-	JMP INICIO				//retorna para o inicio
+    MOV	r1,DELAYCOUNT
+    QBEQ NORMAL,r5,0			//se estado 0, envia dado
+    QBEQ COMPLEMENTO,r5,1	//se estado 1, envia complemento do dado
+    JMP INICIO				//retorna para o inicio
   
 DELAY:
-	SUB	r1,r1, 1     // decrement loop counter
-	QBNE DELAY, r1, 0  // repeat loop unless zero
+    SUB	r1,r1, 1     // decrement loop counter
+    QBNE DELAY, r1, 0  // repeat loop unless zero
     JMP CONTINUA
        
 NORMAL:
