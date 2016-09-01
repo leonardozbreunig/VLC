@@ -1,0 +1,74 @@
+// LED P8_12 r30.t15
+.origin 0
+.entrypoint GO
+
+#define PRU0_R31_VEC_VALID (1<<5)
+#define SIGNUM 3 // corresponds to PRU_EVTOUT_0
+
+#define DELAY_SECONDS 10 // adjust this to experiment
+#define CLOCK 200000000 // PRU is always clocked at 200MHz
+#define CLOCKS_PER_LOOP 2 // loop contains two instructions, one clock each
+#define DELAYCOUNT DELAY_SECONDS * CLOCK / CLOCKS_PER_LOOP
+#define STATE 0
+#define COUNT 0
+
+GO:
+    CLR r30,r30,15
+    MOV r4,COUNT				//contador de bits enviados
+    MOV r5,STATE				//estado
+    MOV r6,0b10001110		//dado comum, sem codificacao, mas precisa iniciar com 10 para indicar nova transmissao
+    MOV	r1,DELAYCOUNT				// loop mata tempo
+INICIO:
+	JMP DELAY
+CONTINUA:
+	MOV	r1,DELAYCOUNT
+	QBEQ NORMAL,r5,0			//se estado 0, envia dado
+	QBEQ COMPLEMENTO,r5,1	//se estado 1, envia complemento do dado
+	JMP INICIO				//retorna para o inicio
+  
+DELAY:
+	SUB	r1,r1, 1     // decrement loop counter
+	QBNE DELAY, r1, 0  // repeat loop unless zero
+    JMP CONTINUA
+       
+NORMAL:
+    QBBS UM,r6,7			//verifica se o dado a ser enviado e 1
+A:
+    QBBC ZERA,r6,7			//verifica se o dado a ser enviado e 0
+B:
+    MOV r5,1				//muda o estado para enviar complemento na proxima
+    JMP INICIO				//retorna para o inicio para aguardar o tempo para o proximo envio
+       
+COMPLEMENTO:
+    QBBC UMC,r6,7			//verifica se o dado a ser enviado e 0, e envia o complemento
+C:
+    QBBS ZERAC,r6,7			//verifica se o dado a ser enviado e 1, e envia o complemento
+D:
+    LSL r6,r6,1			//desloca o dado um bit para a esquerda
+    MOV r5,0				//altera o estado para enviar dado na proxima
+    ADD r4,r4,1			//adiciona um no contador de simbolos enviados
+    QBEQ RESET,r4,9			//se enviou todos os 8 bits reset
+    JMP INICIO				//retorna para o inicio
+
+UM:
+   SET r30,r30,15			//envia 1, setando o pino
+   JMP A        				//retorna
+  
+
+ZERA: 
+    CLR r30,r30,15			//envia 0, limpando o pino
+    JMP B						//retorna
+    
+UMC:
+   SET r30,r30,15			//envia 1, setando o pino
+   JMP C       				//retorna
+
+ZERAC: 
+    CLR r30,r30,15			//envia 0, limpando o pino
+    JMP D						//retorna
+
+RESET:
+    MOV r6,0b10101010		//restaura o dado inicial
+    MOV r4,0				//zera o contador de bits
+    CLR r30,r30,15
+    HALT
