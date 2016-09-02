@@ -1,4 +1,4 @@
-// LED P8_12 r30.t15
+// LED P8_11 r30.t15
 .origin 0
 .entrypoint GO
 
